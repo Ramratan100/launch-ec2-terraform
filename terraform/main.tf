@@ -36,9 +36,9 @@ resource "aws_security_group" "web_sg" {
 }
 
 resource "aws_instance" "web_server" {
-  ami             = "ami-xxxxxxxxxx"  # Replace with your preferred Amazon Linux 2 AMI ID
+  ami             = "ami-005fc0f236362e99f"  # Replace with your preferred Amazon Linux 2 AMI ID
   instance_type   = "t2.micro"
-  key_name        = "your-key-pair"   # Replace with your SSH key name
+  key_name        = "jenkins"   # Replace with your SSH key name
   security_groups = [aws_security_group.web_sg.name]
 
   user_data = file("provision/install_apache_php_mysql.sh")
