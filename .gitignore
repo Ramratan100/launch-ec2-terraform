@@ -1,0 +1,14 @@
+# Ignore Terraform state files and backups
+*.tfstate
+*.tfstate.backup
+
+# Ignore sensitive files
+*.tfvars
+
+# Ignore IDE and editor files
+.idea/
+.vscode/
+*.iml
+
+# Ignore provisioning script if not needed in version control
+provision/install_apache_php_mysql.sh~
