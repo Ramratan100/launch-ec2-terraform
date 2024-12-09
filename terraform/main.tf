@@ -1,17 +1,21 @@
 provider "aws" {
-  region = "us-west-2"  # Update with your AWS region
+  region = var.aws_region
 }
 
-resource "aws_security_group" "web_sg" {
-  name        = "web-sg"
-  description = "Allow inbound HTTP, HTTPS, and SSH traffic"
+module "vpc" {
+  source = "terraform-aws-modules/vpc/aws"
+  name = var.vpc_name
+  cidr = var.vpc_cidr_block
+  enable_dns_support = true
+  enable_dns_hostnames = true
+  enable_nat_gateway = true
+  enable_vpn_gateway = false
+}
 
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+resource "aws_security_group" "apache_sg" {
+  name        = "apache_sg"
+  description = "Allow Apache traffic"
+  vpc_id      = module.vpc.vpc_id
 
   ingress {
     from_port   = 80
@@ -21,8 +25,8 @@ resource "aws_security_group" "web_sg" {
   }
 
   ingress {
-    from_port   = 443
-    to_port     = 443
+    from_port   = 22
+    to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -35,23 +39,48 @@ resource "aws_security_group" "web_sg" {
   }
 }
 
-resource "aws_instance" "web_server" {
-  ami             = "ami-005fc0f236362e99f"  # Replace with your preferred Amazon Linux 2 AMI ID
-  instance_type   = "t2.micro"
-  key_name        = "jenkins"   # Replace with your SSH key name
-  security_groups = [aws_security_group.web_sg.name]
+resource "aws_security_group" "mysql_sg" {
+  name        = "mysql_sg"
+  description = "Allow MySQL traffic from Apache"
+  vpc_id      = module.vpc.vpc_id
 
-  user_data = file("provision/install_apache_php_mysql.sh")
+  ingress {
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    cidr_blocks = [module.vpc.vpc_cidr_block]  # Allow access from within the VPC
+  }
 
-  tags = {
-    Name = "WebServer"
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
-output "instance_public_ip" {
-  value = aws_instance.web_server.public_ip
+resource "aws_instance" "apache_instance" {
+  ami                    = var.apache_ami
+  instance_type          = var.instance_type
+  subnet_id              = module.vpc.public_subnets[0]
+  security_group_ids     = [aws_security_group.apache_sg.id]
+  associate_public_ip_address = true
+  user_data              = file("provision/install_apache_php_mysql.sh")
+
+  tags = {
+    Name = "Apache Web Server"
+  }
 }
 
-output "instance_public_dns" {
-  value = aws_instance.web_server.public_dns
+resource "aws_instance" "mysql_instance" {
+  ami                    = var.mysql_ami
+  instance_type          = var.instance_type
+  subnet_id              = module.vpc.private_subnets[0]
+  security_group_ids     = [aws_security_group.mysql_sg.id]
+  associate_public_ip_address = false
+  user_data              = file("provision/install_apache_php_mysql.sh")
+
+  tags = {
+    Name = "MySQL Database"
+  }
 }
