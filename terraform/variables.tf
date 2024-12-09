@@ -11,6 +11,7 @@ variable "vpc_cidr_block" {
 }
 
 variable "instance_type" {
+  type    = string
   default = "t2.micro"
 }
 
