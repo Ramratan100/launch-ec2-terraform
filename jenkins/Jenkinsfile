@@ -12,7 +12,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 // Clone your GitHub repository which contains your Terraform configuration
-                git branch: 'main', url: 'https://github.com/Ramratan100/mysql_tool.git'
+                git branch: 'main', url: 'https://github.com/Ramratan100/launch-ec2-terraform.git'
             }
         }
 
