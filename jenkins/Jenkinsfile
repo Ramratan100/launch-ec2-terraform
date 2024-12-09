@@ -2,48 +2,66 @@ pipeline {
     agent any
 
     environment {
-        AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')  // Replace with your Jenkins credentials ID
-        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')  // Replace with your Jenkins credentials ID
+        // Use Jenkins credentials for AWS keys for better security
+        AWS_ACCESS_KEY_ID = 'AKIAZ3MGMYHMT6M3VUVM'
+        AWS_SECRET_ACCESS_KEY = 'j8yuEwXWqOioT5tp6hxuCLQcCD82ZLLqT/BsqZhV'
     }
 
     stages {
+        // Stage to Checkout the Code from GitHub
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/your-repo-url.git'  // Replace with your GitHub repo URL
+                // Clone your GitHub repository which contains your Terraform configuration
+                git branch: 'main', url: 'https://github.com/Ramratan100/mysql_tool.git'
             }
         }
 
+        // Stage to Initialize Terraform
         stage('Terraform Init') {
             steps {
-                dir('terraform') {
+                dir('terraform-project') {  // Change this if needed to the correct directory
+                    // List the files in the directory to ensure Terraform files exist
+                    sh 'ls -al'  // This will show the files in the directory
+
+                    // Initialize Terraform (downloads the provider plugins and prepares the environment)
                     sh 'terraform init'
                 }
             }
         }
 
+        // Stage to Validate Terraform Configuration
         stage('Terraform Validate') {
             steps {
-                dir('terraform') {
+                dir('terraform-project') {  // Change this if needed
+                    // Validate the Terraform code to ensure it is syntactically correct
                     sh 'terraform validate'
                 }
             }
         }
 
+        // Stage to Apply the Terraform Configuration
         stage('Terraform Apply') {
             steps {
-                dir('terraform') {
+                dir('terraform-project') {  // Change this if needed
+                    // List the files again to ensure Terraform files exist before applying
+                    sh 'ls -al'  // Check if configuration files exist
+
+                    // Apply the Terraform configuration to create the resources in AWS
                     sh 'terraform apply -auto-approve'
                 }
             }
         }
+        
     }
 
     post {
         success {
-            echo 'Terraform Apply Completed Successfully'
+            // Post-action in case of success
+            echo 'Terraform Apply Completed Successfully!'
         }
         failure {
-            echo 'Terraform Apply Failed'
+            // Post-action in case of failure
+            echo 'Terraform Apply Failed.'
         }
     }
 }
